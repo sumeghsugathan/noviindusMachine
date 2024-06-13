@@ -33,7 +33,6 @@ class PatientProvider with ChangeNotifier {
 
     try {
       _isLoading = true;
-      notifyListeners();
       _branches = await apiService.fetchBranches(_token);
     } catch (error) {
       rethrow;
@@ -48,7 +47,6 @@ class PatientProvider with ChangeNotifier {
 
     try {
       _isLoading = true;
-      notifyListeners();
       _treatments = await apiService.fetchTreatments(_token);
     } catch (error) {
       rethrow;
@@ -60,19 +58,34 @@ class PatientProvider with ChangeNotifier {
 
   Future<void> registerPatient(Map<String, dynamic> patientData) async {
     if (_token.isEmpty) return;
-
     try {
       _isLoading = true;
       notifyListeners();
 
-      // Convert double values to strings
+      // Convert numeric fields to strings
       patientData['total_amount'] = patientData['total_amount'].toString();
       patientData['discount_amount'] =
           patientData['discount_amount'].toString();
       patientData['advance_amount'] = patientData['advance_amount'].toString();
       patientData['balance_amount'] = patientData['balance_amount'].toString();
 
+      // Ensure the ID is set to an empty string if not provided
+      patientData['id'] = patientData['id'] ?? '';
+
+      // Convert lists to comma-separated strings only if they are lists
+      if (patientData['male'] is List) {
+        patientData['male'] = (patientData['male'] as List).join(',');
+      }
+      if (patientData['female'] is List) {
+        patientData['female'] = (patientData['female'] as List).join(',');
+      }
+      if (patientData['treatments'] is List) {
+        patientData['treatments'] =
+            (patientData['treatments'] as List).join(',');
+      }
+
       await apiService.registerPatient(patientData, _token);
+      notifyListeners();
     } catch (error) {
       print('Registration failed: $error');
       rethrow;

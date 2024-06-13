@@ -7,20 +7,33 @@ class ApiService {
   Future<String> login(String username, String password) async {
     final response = await http.post(
       Uri.parse('${baseUrl}Login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
+      body: {
         'username': username,
         'password': password,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['token'];
     } else {
-      throw Exception('Failed to login: ${response.body}');
+      throw Exception('Failed to login');
+    }
+  }
+
+  Future<List<dynamic>> fetchPatients(String token) async {
+    final response = await http.get(
+      Uri.parse('${baseUrl}PatientList'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['patients'];
+    } else {
+      throw Exception('Failed to load patients');
     }
   }
 
@@ -54,24 +67,27 @@ class ApiService {
 
   Future<void> registerPatient(
       Map<String, dynamic> patientData, String token) async {
+    const url = '${baseUrl}PatientUpdate';
     final response = await http.post(
-      Uri.parse('${baseUrl}PatientUpdate'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: json.encode(patientData),
     );
 
-    if (response.statusCode != 200) {
-      String errorMessage;
-      try {
-        final data = json.decode(response.body);
-        errorMessage = data['message'] ?? 'Unknown error occurred';
-      } catch (e) {
-        errorMessage = 'Failed to register patient: ${response.body}';
-      }
-      throw Exception('Failed to register patient: $errorMessage');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      // Successfully registered patient
+      print('Patient registered successfully');
+    } else {
+      // Handle error response
+      final responseBody = response.body;
+      print('Failed to register patient: $responseBody');
+      throw Exception('Failed to register patient: $responseBody');
     }
   }
 }
